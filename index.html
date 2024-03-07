@@ -70,7 +70,6 @@
       
       function nav(dir) {
         const newIdx = curIdx + dir;
-          console.log(newIdx);
         if (newIdx >= 0 && newIdx < slides.length) {
           document.querySelector('.slides section.visible').classList.remove('visible');
           slides[newIdx].classList.add('visible');
