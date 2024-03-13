@@ -15,8 +15,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/css/solarized.css">
-    <link rel="stylesheet" href="/css/trex.css">
+    <link rel="stylesheet" href="css/solarized.css">
+    <link rel="stylesheet" href="css/trex.css">
 
     $if(custom-css)$
     <link rel="stylesheet" href="$custom-css$">
@@ -30,7 +30,7 @@
       styles: {".MathJax_Preview": {visibility: "hidden"}}
       },
       tex2jax: {inlineMath: [["\[","\]"],["\\\(","\\\)"]]},
-      TeX: {extensions: ["AMSmath.js","AMSsymbols.js","/js/xypic.js"]}
+      TeX: {extensions: ["AMSmath.js","AMSsymbols.js","js/xypic.js"]}
       });
     </script>
 
@@ -39,19 +39,31 @@
   </head>
 
   <body>
-    <div class="slides">
+    <div id="slides">
       $for(slides)$
       <section>
 	$body$
       </section>
       $endfor$
     </div>
+    <div id="footer">
+      <p>press <kbd>f</kbd> to enter full screen</p>
+    </div>
     <script>
       var curIdx = 0;
+      var slideEl = null;
       var slides = [];
       
       document.addEventListener('DOMContentLoaded', function() {
-        slides = document.querySelectorAll('.slides section');
+        slideEl = document.getElementById("slides");
+        slideEl.addEventListener('fullscreenchange', () => {
+          if (document.fullscreenElement != null) {
+            document.getElementById("footer").style.display = "none";
+          } else {
+            document.getElementById("footer").style.display = "block";
+          }
+        });
+        slides = slideEl.querySelectorAll('section');
         const qp = new URLSearchParams(window.location.search);
         const slide = parseInt(qp.get("s"));
         if (!isNaN(slide) && slide > 0 && slide < slides.length) {
@@ -61,17 +73,32 @@
       });
       
       document.addEventListener('keydown', function(event) {
-        if (event.keyCode === 37) {
+        switch (event.keyCode) {
+        case 27:
+          if (document.fullscreenElement != null) {
+            document.exitFullscreen();
+          }
+          document.getElementById("footer").style.display = "block";
+          break;
+        case 37:
           nav(-1);
-        } else if (event.keyCode === 39) {
+          break;
+        case 39:
           nav(1);
+          break;
+        case 70:
+          if (document.fullscreenElement == null) {
+            slideEl.requestFullscreen();
+          }
+          break;
+        default:
         }
       });
       
       function nav(dir) {
         const newIdx = curIdx + dir;
         if (newIdx >= 0 && newIdx < slides.length) {
-          document.querySelector('.slides section.visible').classList.remove('visible');
+          slideEl.querySelector('section.visible').classList.remove('visible');
           slides[newIdx].classList.add('visible');
 	  const url = window.location.pathname + '?s=' + newIdx;
 	  history.pushState({slideIndex: newIdx}, '', url); 

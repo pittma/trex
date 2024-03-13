@@ -28,7 +28,7 @@ main =
       compile copyFileCompiler
     match "slides/*.md" $ do
       compile pandocWithMath
-    match "index.html" $ do
+    match "deck.html" $ do
       route idRoute
       compile $ do
         let context = listField "slides" defaultContext (loadAll "slides/*.md")
