@@ -2,3 +2,6 @@
 /_site/
 /dist-newstyle/
 .stack-work
+slides/*
+js/*
+images/*
