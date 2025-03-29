@@ -9,7 +9,12 @@ executable trex
     main-is:          Main.hs
     build-depends:    base ^>=4.17.2.0,
                       hakyll,
-                      pandoc
+                      pandoc,
+                      optparse-applicative,
+                      req,
+                      bytestring,
+                      directory,
+                      filepath
     hs-source-dirs:   bin
     ghc-options: -Wall -threaded
     default-language: Haskell2010
