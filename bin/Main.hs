@@ -70,6 +70,7 @@ genNewDeck ps = do
   createDirectoryIfMissing True (basep </> "slides")
   getFile (basep </> "css" </> "trex.css") ["css", "trex.css"]
   getFile (basep </> "css" </> "solarized.css") ["css", "solarized.css"]
+  getFile (basep </> "css" </> "overrides.css") ["css", "overrides.css"]
   getFile (basep </> "deck.html") ["deck.html"]
   where
     getFile path rfile =
