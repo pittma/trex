@@ -19,11 +19,11 @@ body {
     margin: auto;
 }
 
-#slides section {
+#slides .slide section {
     display: none;
 }
 
-#slides section.visible {
+#slides .slide section.visible {
     margin: auto;
     padding-top: 40px;
     width: 60%;
