@@ -1,107 +1,114 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    $if(title)$
-    <title>$title$</title>
-    $else$
-    <title>Trex Deck</title>
-    $endif$
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        $if(title)$
+        <title>$title$</title>
+        $else$
+        <title>Trex Deck</title>
+        $endif$
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+            rel="stylesheet"
+        />
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/solarized.css">
-    <link rel="stylesheet" href="css/trex.css">
-    <link rel="stylesheet" href="css/overrides.css">
+        <!-- CSS -->
+        <link rel="stylesheet" href="css/solarized.css" />
+        <link rel="stylesheet" href="css/trex.css" />
+        <link rel="stylesheet" href="css/overrides.css" />
 
-    <script type="text/x-mathjax-config">
-      MathJax.Hub.Config({
-      extensions: ["tex2jax.js"],
-      jax: ["input/TeX","output/HTML-CSS"],
-      "HTML-CSS": {
-      styles: {".MathJax_Preview": {visibility: "hidden"}}
-      },
-      tex2jax: {inlineMath: [["\[","\]"],["\\\(","\\\)"]]},
-      TeX: {extensions: ["AMSmath.js","AMSsymbols.js"]}
-      });
-    </script>
+        <script type="text/x-mathjax-config">
+            MathJax.Hub.Config({
+            extensions: ["tex2jax.js"],
+            jax: ["input/TeX","output/HTML-CSS"],
+            "HTML-CSS": {
+            styles: {".MathJax_Preview": {visibility: "hidden"}}
+            },
+            tex2jax: {inlineMath: [["\[","\]"],["\\\(","\\\)"]]},
+            TeX: {extensions: ["AMSmath.js","AMSsymbols.js"]}
+            });
+        </script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/MathJax.js"></script>
+    </head>
 
-  </head>
+    <body>
+        <div id="slides">
+            $for(slides)$
+            <div class="slide">
+                <section>$body$</section>
+            </div>
+            $endfor$
+        </div>
+        <div id="footer">
+            <p>press <kbd>f</kbd> to enter full screen</p>
+        </div>
+        <script>
+            var curIdx = 0;
+            var slideEl = null;
+            var slides = [];
 
-  <body>
-    <div id="slides">
-      $for(slides)$
-      <section>
-	$body$
-      </section>
-      $endfor$
-    </div>
-    <div id="footer">
-      <p>press <kbd>f</kbd> to enter full screen</p>
-    </div>
-    <script>
-      var curIdx = 0;
-      var slideEl = null;
-      var slides = [];
-      
-      document.addEventListener('DOMContentLoaded', function() {
-        slideEl = document.getElementById("slides");
-        slideEl.addEventListener('fullscreenchange', () => {
-          if (document.fullscreenElement != null) {
-            document.getElementById("footer").style.display = "none";
-          } else {
-            document.getElementById("footer").style.display = "block";
-          }
-        });
-        slides = slideEl.querySelectorAll('section');
-        const qp = new URLSearchParams(window.location.search);
-        const slide = parseInt(qp.get("s"));
-        if (!isNaN(slide) && slide > 0 && slide < slides.length) {
-          curIdx = slide;
-        }
-        slides[curIdx].classList.add('visible');
-      });
-      
-      document.addEventListener('keydown', function(event) {
-        switch (event.keyCode) {
-        case 27:
-          if (document.fullscreenElement != null) {
-            document.exitFullscreen();
-          }
-          document.getElementById("footer").style.display = "block";
-          break;
-        case 37:
-          nav(-1);
-          break;
-        case 39:
-          nav(1);
-          break;
-        case 70:
-          if (document.fullscreenElement == null) {
-            slideEl.requestFullscreen();
-          }
-          break;
-        default:
-        }
-      });
-      
-      function nav(dir) {
-        const newIdx = curIdx + dir;
-        if (newIdx >= 0 && newIdx < slides.length) {
-          slideEl.querySelector('section.visible').classList.remove('visible');
-          slides[newIdx].classList.add('visible');
-	  const url = window.location.pathname + '?s=' + newIdx;
-	  history.pushState({slideIndex: newIdx}, '', url); 
-          curIdx = newIdx;
-        }
-      }
-    </script>
-  </body>
+            document.addEventListener("DOMContentLoaded", function () {
+                slideEl = document.getElementById("slides");
+                slideEl.addEventListener("fullscreenchange", () => {
+                    if (document.fullscreenElement != null) {
+                        document.getElementById("footer").style.display =
+                            "none";
+                    } else {
+                        document.getElementById("footer").style.display =
+                            "block";
+                    }
+                });
+                slides = slideEl.querySelectorAll("section");
+                const qp = new URLSearchParams(window.location.search);
+                const slide = parseInt(qp.get("s"));
+                if (!isNaN(slide) && slide > 0 && slide < slides.length) {
+                    curIdx = slide;
+                }
+                slides[curIdx].classList.add("visible");
+            });
+
+            document.addEventListener("keydown", function (event) {
+                switch (event.keyCode) {
+                    case 27:
+                        if (document.fullscreenElement != null) {
+                            document.exitFullscreen();
+                        }
+                        document.getElementById("footer").style.display =
+                            "block";
+                        break;
+                    case 37:
+                        nav(-1);
+                        break;
+                    case 39:
+                        nav(1);
+                        break;
+                    case 70:
+                        if (document.fullscreenElement == null) {
+                            slideEl.requestFullscreen();
+                        }
+                        break;
+                    default:
+                }
+            });
+
+            function nav(dir) {
+                const newIdx = curIdx + dir;
+                if (newIdx >= 0 && newIdx < slides.length) {
+                    slideEl
+                        .querySelector("section.visible")
+                        .classList.remove("visible");
+                    slides[newIdx].classList.add("visible");
+                    const url = window.location.pathname + "?s=" + newIdx;
+                    history.pushState({ slideIndex: newIdx }, "", url);
+                    curIdx = newIdx;
+                }
+            }
+        </script>
+    </body>
 </html>
