@@ -186,7 +186,7 @@ kbd {
         page-break-inside: avoid;
     }
 
-    .footer {
+    #footer {
         display: none;
     }
 }
