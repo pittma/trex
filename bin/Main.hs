@@ -118,19 +118,23 @@ genNewDeck ps title = do
   getFile (basep </> "css" </> "solarized.css") ["css", "solarized.css"]
   getFile (basep </> "css" </> "overrides.css") ["css", "overrides.css"]
   getFile (basep </> "deck.html") ["deck.html"]
+  getFile (basep </> "readme.md") ["deck-readme.md"]
 
 syncUpstream :: IO ()
 syncUpstream = do
   getFile ("css" </> "trex.css") ["css", "trex.css"]
   getFile ("css" </> "solarized.css") ["css", "solarized.css"]
   getFile "deck.html" ["deck.html"]
+  getFile "readme.md" ["deck-readme.md"]
 
 main :: IO ()
 main = do
   cmd <- execParser (info (mainParser <**> helper) fullDesc)
   case cmd of
     New path title -> genNewDeck path (fromMaybe path title)
-    Update -> syncUpstream
+    Update -> do
+      _cfg <- input auto "./cfg.dhall" :: IO DeckCfg -- confirm that we are in a valid Trex dir
+      syncUpstream
     Serve -> void $ do
       cfg <- input auto "./cfg.dhall" :: IO DeckCfg
       hakyllWithExitCodeAndArgs
