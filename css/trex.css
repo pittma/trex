@@ -170,7 +170,7 @@ kbd {
     position: absolute;
     width: 100%;
     bottom: 0;
-    color: var(--base-color);
+    color: rgb(215, 215, 215);
     font-size: 0.5em;
     text-align: center;
 }
