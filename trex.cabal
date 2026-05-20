@@ -12,6 +12,7 @@ executable trex
     dhall,
     directory,
     filepath,
+    githash,
     hakyll,
     optparse-applicative,
     pandoc,

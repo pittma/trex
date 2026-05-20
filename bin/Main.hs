@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -14,29 +15,32 @@ import System.IO
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as T
 import Dhall hiding (void)
-import Hakyll
+import GitHash
+import Hakyll hiding (Clean)
 import Network.HTTP.Req
 import Options.Applicative hiding (auto)
 import Text.Pandoc.Options
 
 data Commands
-  = New !String (Maybe String)
-  | Serve
-  | Update
-  | Export !String
+    = New !String (Maybe String)
+    | Serve
+    | Update
+    | Clean
+    | Version
+    | Export !String
 
 newtype DeckCfg = Cfg
-  { cfgTitle :: String
-  }
-  deriving (Generic)
+    { cfgTitle :: String
+    }
+    deriving (Generic)
 
 instance FromDhall DeckCfg
 
 newParser :: Parser Commands
 newParser =
-  New
-    <$> argument str (metavar "PATH")
-    <*> optional (strOption (long "title" <> short 't' <> metavar "TITLE"))
+    New
+        <$> argument str (metavar "PATH")
+        <*> optional (strOption (long "title" <> short 't' <> metavar "TITLE"))
 
 serveParser :: Parser Commands
 serveParser = pure Serve
@@ -44,101 +48,116 @@ serveParser = pure Serve
 updateParser :: Parser Commands
 updateParser = pure Update
 
+cleanParser :: Parser Commands
+cleanParser = pure Clean
+
+versionParser :: Parser Commands
+versionParser = pure Version
+
 exportParser :: Parser Commands
 exportParser = Export <$> argument str (metavar "PATH")
 
 mainParser :: Parser Commands
 mainParser =
-  subparser $
-    command "new" (info newParser (progDesc "generate a new Trex Deck at the given path"))
-      <> command
-        "serve"
-        (info serveParser (progDesc "run the server and watch for changes"))
-      <> command
-        "update"
-        (info updateParser (progDesc "Sync Trex's static files with the latest updtream versions"))
-      <> command "export" (info exportParser (progDesc "export the presentation to the given location"))
+    subparser $
+        command "new" (info newParser (progDesc "generate a new Trex Deck at the given path"))
+            <> command
+                "serve"
+                (info serveParser (progDesc "run the server and watch for changes"))
+            <> command
+                "update"
+                (info updateParser (progDesc "sync Trex's static files with the latest upstream versions"))
+            <> command "export" (info exportParser (progDesc "export the presentation to the given location"))
+            <> command "clean" (info cleanParser (progDesc "delete cache and site folders"))
+            <> command "version" (info versionParser (progDesc "print the commit hash of the running version"))
 
 pandocWithMath :: Compiler (Item String)
 pandocWithMath =
-  let defWExt = writerExtensions defaultHakyllWriterOptions
-      mathExtensions = [Ext_tex_math_dollars, Ext_latex_macros]
-      extents = foldr enableExtension defWExt mathExtensions
-      wopts =
-        defaultHakyllWriterOptions
-          { writerExtensions = extents
-          , writerHTMLMathMethod = MathJax ""
-          }
-   in pandocCompilerWith defaultHakyllReaderOptions wopts
+    let defWExt = writerExtensions defaultHakyllWriterOptions
+        mathExtensions = [Ext_tex_math_dollars, Ext_latex_macros]
+        extents = foldr enableExtension defWExt mathExtensions
+        wopts =
+            defaultHakyllWriterOptions
+                { writerExtensions = extents
+                , writerHTMLMathMethod = MathJax ""
+                }
+     in pandocCompilerWith defaultHakyllReaderOptions wopts
 
 site :: DeckCfg -> Rules ()
 site c = do
-  match "css/*.css" $ do
-    route idRoute
-    compile copyFileCompiler
-  match "js/*.js" $ do
-    route idRoute
-    compile copyFileCompiler
-  match "images/*" $ do
-    route idRoute
-    compile copyFileCompiler
-  match "slides/*.md" $ do
-    compile pandocWithMath
-  match "deck.html" $ do
-    route idRoute
-    compile $ do
-      let context = listField "slides" defaultContext (loadAll "slides/*.md")
-      getResourceBody >>= applyAsTemplate (context <> constField "title" (cfgTitle c))
+    match "css/*.css" $ do
+        route idRoute
+        compile copyFileCompiler
+    match "js/*.js" $ do
+        route idRoute
+        compile copyFileCompiler
+    match "images/*" $ do
+        route idRoute
+        compile copyFileCompiler
+    match "slides/*.md" $ do
+        compile pandocWithMath
+    match "deck.html" $ do
+        route idRoute
+        compile $ do
+            let context = listField "slides" defaultContext (loadAll "slides/*.md")
+            getResourceBody >>= applyAsTemplate (context <> constField "title" (cfgTitle c))
 
 getFile :: FilePath -> [T.Text] -> IO ()
 getFile path rfile =
-  runReq defaultHttpConfig $ do
-    let baseUrl =
-          https "raw.githubusercontent.com"
-            /: "pittma"
-            /: "trex"
-            /: "refs"
-            /: "heads"
-            /: "main"
-        url = foldl' (/:) baseUrl rfile
-    r <- req GET url NoReqBody lbsResponse mempty
-    liftIO $ LBS.writeFile path (responseBody r)
+    runReq defaultHttpConfig $ do
+        let baseUrl =
+                https "raw.githubusercontent.com"
+                    /: "pittma"
+                    /: "trex"
+                    /: "refs"
+                    /: "heads"
+                    /: "main"
+            url = foldl' (/:) baseUrl rfile
+        r <- req GET url NoReqBody lbsResponse mempty
+        liftIO $ LBS.writeFile path (responseBody r)
 
 genNewDeck :: String -> String -> IO ()
 genNewDeck ps title = do
-  basep <- makeAbsolute ps
-  createDirectoryIfMissing True basep
-  createDirectoryIfMissing True (basep </> "css")
-  createDirectoryIfMissing True (basep </> "images")
-  createDirectoryIfMissing True (basep </> "js")
-  createDirectoryIfMissing True (basep </> "slides")
-  withFile (basep </> "cfg.dhall") WriteMode $ \h -> do
-    hPutStrLn h ("{cfgTitle = \"" ++ title ++ "\"}")
-  getFile (basep </> "css" </> "trex.css") ["css", "trex.css"]
-  getFile (basep </> "css" </> "solarized.css") ["css", "solarized.css"]
-  getFile (basep </> "css" </> "overrides.css") ["css", "overrides.css"]
-  getFile (basep </> "deck.html") ["deck.html"]
-  getFile (basep </> "readme.md") ["deck-readme.md"]
+    basep <- makeAbsolute ps
+    createDirectoryIfMissing True basep
+    createDirectoryIfMissing True (basep </> "css")
+    createDirectoryIfMissing True (basep </> "images")
+    createDirectoryIfMissing True (basep </> "js")
+    createDirectoryIfMissing True (basep </> "slides")
+    withFile (basep </> "cfg.dhall") WriteMode $ \h -> do
+        hPutStrLn h ("{cfgTitle = \"" ++ title ++ "\"}")
+    getFile (basep </> "css" </> "trex.css") ["css", "trex.css"]
+    getFile (basep </> "css" </> "solarized.css") ["css", "solarized.css"]
+    getFile (basep </> "css" </> "overrides.css") ["css", "overrides.css"]
+    getFile (basep </> "deck.html") ["deck.html"]
+    getFile (basep </> "readme.md") ["deck-readme.md"]
 
 syncUpstream :: IO ()
 syncUpstream = do
-  getFile ("css" </> "trex.css") ["css", "trex.css"]
-  getFile ("css" </> "solarized.css") ["css", "solarized.css"]
-  getFile "deck.html" ["deck.html"]
-  getFile "readme.md" ["deck-readme.md"]
+    getFile ("css" </> "trex.css") ["css", "trex.css"]
+    getFile ("css" </> "solarized.css") ["css", "solarized.css"]
+    getFile "deck.html" ["deck.html"]
+    getFile "readme.md" ["deck-readme.md"]
+
+gitInfo :: GitInfo
+gitInfo = $$tGitInfoCwd
 
 main :: IO ()
 main = do
-  cmd <- execParser (info (mainParser <**> helper) fullDesc)
-  case cmd of
-    New path title -> genNewDeck path (fromMaybe path title)
-    Update -> do
-      _cfg <- input auto "./cfg.dhall" :: IO DeckCfg -- confirm that we are in a valid Trex dir
-      syncUpstream
-    Serve -> void $ do
-      cfg <- input auto "./cfg.dhall" :: IO DeckCfg
-      hakyllWithExitCodeAndArgs
-        defaultConfiguration
-        (Options False (Watch "localhost" 8000 False))
-        (site cfg)
-    Export _ -> putStrLn "not implemented yet (not sure it makes sense at all tbh)"
+    cmd <- execParser (info (mainParser <**> helper) fullDesc)
+    case cmd of
+        New path title -> genNewDeck path (fromMaybe path title)
+        Update -> do
+            _cfg <- input auto "./cfg.dhall" :: IO DeckCfg -- confirm that we are in a valid Trex dir
+            syncUpstream
+        Serve -> void $ do
+            cfg <- input auto "./cfg.dhall" :: IO DeckCfg
+            hakyllWithExitCodeAndArgs
+                defaultConfiguration
+                (Options False (Watch "localhost" 8000 False))
+                (site cfg)
+        Clean -> do
+            removePathForcibly "_cache"
+            removePathForcibly "_site"
+        Version -> putStrLn $ take 7 (giHash gitInfo)
+        Export _ -> putStrLn "not implemented yet (not sure it makes sense at all tbh)"
