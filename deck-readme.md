@@ -20,6 +20,7 @@ Now, from this directory, run `trex serve`. The presentation will be available
 at `http://localhost:8080/deck.html`.
 
 **NOTE:** once the presentation has been compiled once, it is self-contained at
-`_site/deck.html`. If no changes need to be made, you can simply open that file
-in your browser. `trex serve` watches slides for changes and updates the site,
-but it may not be needed if your intention is only to view the presentation.
+`_site/`. If no changes need to be made, you can simply open `deck.html` from
+that directory in your browser. `trex serve` watches slides for changes and
+updates the site, but it may not be needed if your intention is only to view the
+presentation.
