@@ -154,16 +154,14 @@ kbd {
 
 #slides .slide section {
     display: none;
-}
-
-#slides .slide section.visible {
     margin: auto;
     padding-top: 40px;
     width: 60%;
     height: 100%;
+}
+
+#slides .slide section.visible {
     display: block;
-    justify-content: center;
-    align-items: center;
 }
 
 #footer {
